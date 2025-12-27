@@ -1,0 +1,10 @@
+Artificial Intelligence (AI) is intelligence demonstrated by machines, as opposed to the natural intelligence displayed by animals including humans.
+Machine learning is a subset of AI that focuses on building systems that learn – or improve performance – based on data they consume.
+Deep learning is a specific type of machine learning that relies on neural networks with many layers.
+The James Webb Space Telescope is the largest optical telescope in space, equipped with high-resolution and high-sensitivity, allowing it to view objects too old, distant, or faint for the Hubble Space Telescope.
+Black holes are regions of spacetime where gravity is so strong that nothing - no particles or even electromagnetic radiation such as light - can escape from it.
+Python is a high-level, general-purpose programming language. Its design philosophy emphasizes code readability with the use of significant indentation.
+Natural Language Processing (NLP) is a subfield of linguistics, computer science, and artificial intelligence concerned with the interactions between computers and human language.
+SpaceX is an American spacecraft manufacturer, launch service provider, defense contractor and satellite communications company headquartered in Hawthorne, California.
+The concept of a "singularity" in AI refers to a hypothetical point in time when technological growth becomes uncontrollable and irreversible, resulting in unfathomable changes to human civilization.
+RAG stands for Retrieval-Augmented Generation, a technique to enhance LLM responses by retrieving relevant data from outside sources.
