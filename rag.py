@@ -1,57 +1,92 @@
 import argparse
 import sys
+from typing import List, Tuple, Optional
+from dataclasses import dataclass
+import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
+from colorama import init, Fore, Style
 
-def load_knowledge(filepath):
-    """Loads the knowledge base from a text file, line by line."""
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            # Filter out empty lines
-            lines = [line.strip() for line in f.readlines() if line.strip()]
-        return lines
-    except FileNotFoundError:
-        print(f"Error: File '{filepath}' not found.")
-        sys.exit(1)
+# Initialize colorama
+init(autoreset=True)
 
-def find_best_match(query, documents):
+@dataclass
+class SearchResult:
+    index: int
+    score: float
+    content: str
+
+class RAGEngine:
     """
-    Finds the most similar document to the query using TF-IDF and Cosine Similarity.
+    A simple Retrieval-Augmented Generation (RAG) engine using TF-IDF and Cosine Similarity.
     """
-    # Create a corpus consisting of the documents and the query
-    corpus = documents + [query]
 
-    # Vectorize the corpus
-    vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform(corpus)
+    def __init__(self, knowledge_path: str):
+        self.knowledge_path = knowledge_path
+        self.documents: List[str] = []
+        self._load_knowledge()
 
-    # The usage of the vectorizer handles the math for us.
-    # The last vector is our query, the rest are the documents.
-    query_vec = tfidf_matrix[-1]
-    doc_vecs = tfidf_matrix[:-1]
+    def _load_knowledge(self) -> None:
+        """Loads the knowledge base from a text file, line by line."""
+        try:
+            with open(self.knowledge_path, 'r', encoding='utf-8') as f:
+                # Filter out empty lines and strip whitespace
+                self.documents = [line.strip() for line in f.readlines() if line.strip()]
+        except FileNotFoundError:
+            print(f"{Fore.RED}Error: File '{self.knowledge_path}' not found.{Style.RESET_ALL}")
+            sys.exit(1)
+        except Exception as e:
+            print(f"{Fore.RED}Error loading knowledge base: {e}{Style.RESET_ALL}")
+            sys.exit(1)
 
-    # Calculate cosine similarity between query and all documents
-    # cosine_similarity returns a matrix, we want the first row (comparisons for our query)
-    similarities = cosine_similarity(query_vec, doc_vecs).flatten()
+    def search(self, query: str) -> Optional[SearchResult]:
+        """
+        Finds the most similar document to the query.
 
-    # Find index of best match
-    best_idx = np.argmax(similarities)
-    best_score = similarities[best_idx]
+        Args:
+            query: The search query.
 
-    return best_idx, best_score
+        Returns:
+            SearchResult object containing index, score, and content, or None if no docs.
+        """
+        if not self.documents:
+            return None
+
+        # Create a corpus consisting of the documents and the query
+        corpus = self.documents + [query]
+
+        # Vectorize the corpus
+        vectorizer = TfidfVectorizer()
+        try:
+            tfidf_matrix = vectorizer.fit_transform(corpus)
+        except ValueError:
+            # Handle case where vocabulary is empty
+            return None
+
+        # The last vector is our query, the rest are the documents.
+        query_vec = tfidf_matrix[-1]
+        doc_vecs = tfidf_matrix[:-1]
+
+        # Calculate cosine similarity
+        similarities = cosine_similarity(query_vec, doc_vecs).flatten()
+
+        # Find best match
+        best_idx = int(np.argmax(similarities))
+        best_score = float(similarities[best_idx])
+
+        return SearchResult(index=best_idx, score=best_score, content=self.documents[best_idx])
 
 def print_banner():
-    print("=" * 50)
-    print("   DOCU-MIND: Simple RAG System")
-    print("=" * 50)
+    print(f"{Fore.CYAN}{'=' * 60}")
+    print(f"   DOCU-MIND: Professional RAG System")
+    print(f"{'=' * 60}{Style.RESET_ALL}")
 
 def main():
     print_banner()
     
     knowledge_file = "knowledge.txt"
-    documents = load_knowledge(knowledge_file)
-    print(f"[INFO] Loaded {len(documents)} facts from {knowledge_file}.\n")
+    engine = RAGEngine(knowledge_file)
+    print(f"{Fore.GREEN}[INFO] Loaded {len(engine.documents)} facts from {knowledge_file}.{Style.RESET_ALL}\n")
 
     parser = argparse.ArgumentParser(description="Ask a question to the knowledge base.")
     parser.add_argument("query", nargs="?", help="The question/query to search for.")
@@ -60,24 +95,25 @@ def main():
     query = args.query
     if not query:
         try:
-            query = input("Enter your query: ")
+            query = input(f"{Fore.YELLOW}Enter your query: {Style.RESET_ALL}")
         except KeyboardInterrupt:
+            print("\nGoodbye!")
             sys.exit(0)
 
     if not query.strip():
-        print("Error: Empty query.")
+        print(f"{Fore.RED}Error: Empty query.{Style.RESET_ALL}")
         return
 
-    print(f"\nSearching for: \"{query}\"...")
-    best_idx, score = find_best_match(query, documents)
+    print(f"\nSearching for: \"{Style.BRIGHT}{query}{Style.RESET_ALL}\"...")
+    result = engine.search(query)
 
-    print("\n--- Result ---")
-    if score > 0.0:
-        print(f"Match Score: {score:.4f}")
-        print(f"Answer: {documents[best_idx]}")
+    print(f"\n{Fore.CYAN}--- Result ---{Style.RESET_ALL}")
+    if result and result.score > 0.1: # Added a small threshold
+        print(f"Match Score: {Fore.YELLOW}{result.score:.4f}{Style.RESET_ALL}")
+        print(f"Answer: {Style.BRIGHT}{result.content}{Style.RESET_ALL}")
     else:
-        print("No relevant information found in the knowledge base.")
-    print("=" * 50)
+        print(f"{Fore.RED}No relevant information found in the knowledge base.{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
 
 if __name__ == "__main__":
     main()
