@@ -90,7 +90,19 @@ def main():
 
     parser = argparse.ArgumentParser(description="Ask a question to the knowledge base.")
     parser.add_argument("query", nargs="?", help="The question/query to search for.")
+    parser.add_argument("--add", help="Add a new fact to the knowledge base.", type=str)
     args = parser.parse_args()
+
+    # Handle adding new knowledge
+    if args.add:
+        try:
+            with open(knowledge_file, "a", encoding="utf-8") as f:
+                f.write(f"\n{args.add}")
+            print(f"{Fore.GREEN}[SUCCESS] Added new fact to {knowledge_file}{Style.RESET_ALL}")
+            return
+        except Exception as e:
+            print(f"{Fore.RED}Error adding knowledge: {e}{Style.RESET_ALL}")
+            sys.exit(1)
 
     query = args.query
     if not query:
